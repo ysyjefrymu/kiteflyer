@@ -1,484 +1,420 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bestandsliste</title>
+<title>Kite Flyer</title>
 <style>
-:root{
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-  --bg:#f1efe9; --fg:#1f1e1b; --muted:#6b675f; --bar:#ffffff; --line:#d8d4ca; --accent:#2f5d50; --accent-fg:#ffffff;
-  color-scheme:light;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#1b1a18; --fg:#ece9e2; --muted:#a39e93; --bar:#262522; --line:#3a3833; --accent:#7fb8a6; --accent-fg:#10201b;
-    color-scheme:dark;
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --accent: #f97316;
+    --accent2: #ea580c;
+    --text: #e5e7eb;
+    --muted: #94a3b8;
   }
-}
-:root[data-theme="dark"]{
-  --bg:#1b1a18; --fg:#ece9e2; --muted:#a39e93; --bar:#262522; --line:#3a3833; --accent:#7fb8a6; --accent-fg:#10201b;
-  color-scheme:dark;
-}
-*,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bar);z-index:10}
-
-.toolbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-  padding:10px 14px;background:var(--bar);border-bottom:1px solid var(--line)}
-.toolbar .hint{color:var(--muted);font-size:13px;margin-right:auto}
-.btn{font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:transparent;color:var(--fg);
-  padding:8px 14px;border-radius:8px;cursor:pointer}
-.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-.btn:disabled{opacity:.55;cursor:wait}
-.status{width:100%;font-size:13px;color:var(--muted);min-height:1em}
-
-.stage{overflow-x:auto;padding:18px 12px 40px}
-/* The sheet is paper: always light, fixed A4 proportions (794 x 1123 px). */
-#sheet{width:794px;min-height:1123px;margin:0 auto;background:#fff;color:#1d1d1b;padding:34px 36px 30px;
-  box-shadow:0 2px 18px rgba(0,0,0,.18);font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
-#sheet h1{margin:0 0 14px;font-size:26px;letter-spacing:.2px}
-.meta{display:flex;align-items:center;gap:22px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1d1d1b;font-size:14px}
-.meta label{font-weight:700}
-.meta .date{display:flex;align-items:center;gap:8px}
-.meta .date input{width:120px}
-.days{display:flex;gap:14px;align-items:center}
-.day{display:flex;align-items:center;gap:5px;cursor:pointer;background:none;border:0;font:inherit;font-size:14px;color:inherit;padding:0}
-.box{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1.5px solid #1d1d1b;border-radius:3px;
-  font-size:13px;line-height:1;font-weight:700}
-
-.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 22px;align-items:start}
-.col{min-width:0}
-.row{min-width:0}
-.col>section{margin-bottom:12px}
-section h2{margin:0 0 4px;padding:3px 7px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;background:#2f5d50;color:#fff;border-radius:3px}
-.row{display:flex;align-items:flex-end;gap:6px;min-height:24px;padding:1px 0;font-size:12.5px}
-.row .lbl{flex:0 0 11.5em;line-height:1.15;padding-bottom:2px}
-.row .val{flex:1 1 0;min-width:0;width:0}
-.row.full{flex-direction:column;align-items:stretch;gap:0}
-.row.full .lbl{padding-bottom:0;flex:none}
-.row.full .val{flex:none;width:100%}
-input[type=text]{font:inherit;color:#1d1d1b;background:transparent;border:0;border-bottom:1px solid #8a867c;border-radius:0;
-  padding:2px 2px 1px;outline:none;min-width:0;height:20px}
-input[type=text]:focus{border-bottom-color:#2f5d50;background:#f3f8f6}
-.cups{margin-top:6px}
-.row.sub .lbl{padding-left:12px;color:#55524b}
-
-/* Mobile: fluid single-column form. The export always renders the fixed A4 layout above. */
-@media (max-width: 820px){
-  .toolbar{padding:8px 10px;gap:6px}
-  .toolbar .hint{display:none}
-  .toolbar .btn{flex:1 1 0;min-height:44px;padding:10px 8px;font-size:14px}
-  .toolbar #reset{flex:0 0 auto}
-  .stage{padding:10px 8px 28px;overflow-x:visible}
-  #sheet{width:100%;min-height:0;padding:18px 14px 20px;box-shadow:0 1px 8px rgba(0,0,0,.15);border-radius:6px}
-  #sheet h1{font-size:24px;margin-bottom:12px}
-  .meta{flex-direction:column;align-items:stretch;gap:12px}
-  .meta .date input{flex:1;width:auto;max-width:200px}
-  .days{flex-wrap:wrap;gap:10px}
-  #days{flex-wrap:wrap;gap:8px !important}
-  .day{padding:8px 12px;border:1px solid #bdb8ac;border-radius:8px;font-size:16px;min-height:44px;gap:8px}
-  .box{width:22px;height:22px;font-size:16px}
-  .cols{grid-template-columns:minmax(0,1fr);gap:0}
-  section h2{font-size:13px;padding:6px 10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:2}
-  .row{min-height:44px;gap:10px;font-size:16px;padding:2px 0}
-  .row .lbl{flex:0 0 11.8em;padding-bottom:6px;line-height:1.2}
-  .row .val{flex:1 1 0}
-  .row.full .val{flex:none;width:100%}
-  input[type=text]{height:36px;font-size:16px;padding:4px 4px 2px}
-  .meta .date input{height:36px}
-}
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+  #hud {
+    display: flex;
+    gap: 22px;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  #hud span { color: var(--accent); font-weight: 700; }
+  #board-wrap {
+    position: relative;
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+  }
+  canvas {
+    display: block;
+    border-radius: 6px;
+    max-width: 92vw;
+    max-height: 70vh;
+    touch-action: none;
+    cursor: pointer;
+  }
+  #overlay {
+    position: absolute;
+    inset: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(15,23,42,0.88);
+    border-radius: 6px;
+    text-align: center;
+    padding: 20px;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; color: var(--accent); }
+  #overlay p { margin: 0; color: var(--muted); font-size: 0.88rem; max-width: 240px; line-height: 1.5; }
+  button {
+    background: var(--accent2);
+    color: #fff;
+    border: none;
+    padding: 11px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:active { transform: scale(0.96); }
+  #hint { font-size: 0.76rem; color: var(--muted); }
 </style>
 </head>
 <body>
-
-<div class="toolbar">
-  <span class="hint">Ausfüllen, dann als PDF oder JPG speichern (1 Seite, A4). Eingaben bleiben gespeichert.</span>
-  <button class="btn" id="reset" type="button">Formular leeren</button>
-  <button class="btn" id="jpg" type="button">Als JPG speichern</button>
-  <button class="btn primary" id="pdf" type="button">Als PDF speichern</button>
-  <div class="status" id="status" role="status"></div>
-</div>
-
-<div class="stage">
-  <div id="sheet">
-    <h1>Bestandsliste</h1>
-    <div class="meta">
-      <div class="date"><label for="date">Datum:</label><input type="text" id="date" autocomplete="off"></div>
-      <div class="days"><label>Tag:</label><span id="days" style="display:flex;gap:14px"></span></div>
-    </div>
-    <div class="cols" id="cols"></div>
+  <h1>🪁 KITE FLYER</h1>
+  <div id="hud">
+    <div>Score: <span id="score">0</span></div>
+    <div>Best: <span id="best">0</span></div>
   </div>
-</div>
+  <div id="board-wrap">
+    <canvas id="board" width="320" height="480"></canvas>
+    <div id="overlay">
+      <h2 id="overlay-title">KITE FLYER</h2>
+      <p id="overlay-msg">Tap, click or press Space to catch the wind and lift your kite. Slip through the gaps between the poles!</p>
+      <button id="start-btn">Start Flying</button>
+    </div>
+  </div>
+  <div id="hint">Tap / click / Space = lift</div>
 
 <script>
-(function(){
-  var SECTIONS = {
-    milch: ["Milch & Zutaten", ["3,5 % Milch","1,5 % Milch","Oatly","Laktosefreie","Kokosmilch","Mandelmilch","Chai","Karamell","Kakao","Matcha","Crunch für Müsli","Pistazien","Sonstiges*"]],
-    kaffee: ["Kaffeebohnen", ["Hazel","Napoli","Papa Higo","Sonstiges*"]],
-    back: ["Backwaren", ["Helle Boule-Brötchen","Dinkelknoten","Laugenstangen","Laugenecken","Buttercroissants","Nougatcroissants","Cookies, hell","Cookies, dunkel","Zimtschnecken","Brezeln","Brownies","Cantuccini","Flammkuchen Elsässer","Flammkuchen Griechisch","Flammkuchen Wildlachs","Sonstiges*"]],
-    belag: ["Belag & Küche", ["Käse","Camembert","Hähnchen","Salami","Schinken","Frischkäse","Honig-Senf","Salat","Frankfurter","Preiselbeeren","Ketchup","Senf","Zucker, weiß","Zucker, braun","Mohn","Sesam","Laugensalz","Sonstiges*"]],
-    pack: ["Verpackungsmaterial", ["Blaue Becher","+ Deckel","Rosa Becher","+ Deckel","Clearcups, klein","+ Deckel","Clearcups, groß","+ Deckel","Servietten","Papiertüten, klein","Papiertüten, groß","Papiertüten, braun","Pappteller","Strohhalme","Sonstiges*"]],
-    rein: ["Reinigung & Verbrauchsmaterial", ["Spülmittel","Klarspüler","Glasreiniger","Fettlöser","Puly","Frischhaltefolie","Müllsäcke, klein","Müllsäcke, groß","Backpapier","Küchenrolle","Geschirrtücher","Mikrofasertücher","Helle Tücher","Dunkle Tücher","Umschläge","Sonstiges*"]],
-    getr: ["Getränke", ["Cola normal","Cola light","Cola zero","Fanta","Sprite","Isodrink","Wasser Medium","Wasser Feinperlig","Wasser für Americano","Eistee","Sonstiges*"]]
-  };
-  var LAYOUT = [["milch","kaffee","back"],["belag","pack"],["getr","rein"]];
-  var DAYS = ["Mo","Di","Mi","Do","Fr"];
+(function() {
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
 
-  function el(tag, cls, text){ var e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayMsg = document.getElementById('overlay-msg');
+  const startBtn = document.getElementById('start-btn');
 
-  var colsHost = document.getElementById("cols");
-  LAYOUT.forEach(function(keys, ci){
-    var col = el("div","col");
-    keys.forEach(function(k){
-      var sec = el("section"); sec.appendChild(el("h2",null,SECTIONS[k][0]));
-      SECTIONS[k][1].forEach(function(name){
-        var other = name.slice(-1)==="*";
-        var row = el("div","row"+(other?" full":"")+(name.charAt(0)==="+"?" sub":""));
-        row.appendChild(el("span","lbl",other?"Sonstiges":name));
-        var inp = el("input","val"); inp.type="text"; inp.autocomplete="off";
-        inp.setAttribute("aria-label", other?("Sonstiges – "+SECTIONS[k][0]):name);
-        row.appendChild(inp); sec.appendChild(row);
-      });
-      col.appendChild(sec);
-    });
-    if(ci===2){
-      ["Fehlen Tassen oder Gläser?","Fehlen Kleingeld oder Scheine?"].forEach(function(q){
-        var cups = el("div","row full cups");
-        cups.appendChild(el("span","lbl",q));
-        var ci2 = el("input","val"); ci2.type="text"; ci2.autocomplete="off"; ci2.setAttribute("aria-label",q);
-        cups.appendChild(ci2); col.appendChild(cups);
-      });
+  function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+  let best = parseInt(safeGet('kite_best') || '0', 10);
+  bestEl.textContent = best;
+
+  const GROUND_H = 56;
+  const GROUND_Y = H - GROUND_H;
+  const GRAVITY = 0.34;
+  const FLAP = -5.8;
+  const MAX_FALL = 8;
+  const POLE_W = 54;
+  const POLE_SPACING = 190;
+  const KITE_X = 90;
+  const KITE_R = 11;
+
+  // Sky gradient is created once and reused every frame
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+  skyGrad.addColorStop(0, '#60a5fa');
+  skyGrad.addColorStop(1, '#bae6fd');
+
+  let kite, poles, clouds, tail, score, running, started, speed, gap, groundOffset, deadTimer, lastTime;
+
+  function makeClouds() {
+    const list = [];
+    for (let i = 0; i < 5; i++) {
+      list.push({ x: Math.random()*W, y: 30 + Math.random()*(GROUND_Y-160), s: 0.6 + Math.random()*0.8, v: 0.15 + Math.random()*0.25 });
     }
-    colsHost.appendChild(col);
-  });
+    return list;
+  }
 
-  var dayHost = document.getElementById("days");
-  var dayState = {};
-  DAYS.forEach(function(d){
-    var b = el("button","day"); b.type="button"; b.setAttribute("aria-pressed","false");
-    var box = el("span","box",""); var t = el("span",null,d);
-    b.appendChild(box); b.appendChild(t);
-    b.addEventListener("click", function(){
-      dayState[d] = !dayState[d];
-      box.textContent = dayState[d] ? "✓" : "";
-      b.setAttribute("aria-pressed", dayState[d] ? "true":"false");
+  function reset() {
+    kite = { y: H/2 - 20, vy: 0, angle: 0 };
+    tail = [];
+    for (let i = 0; i < 6; i++) tail.push({ x: KITE_X - 14 - i*9, y: kite.y + 8 + i*3 });
+    poles = [];
+    clouds = clouds || makeClouds();
+    score = 0;
+    speed = 2.1;
+    gap = 150;
+    groundOffset = 0;
+    started = false;
+    running = true;
+    deadTimer = 0;
+    scoreEl.textContent = 0;
+    addPole(W + 60);
+    addPole(W + 60 + POLE_SPACING);
+    addPole(W + 60 + POLE_SPACING*2);
+  }
+
+  function addPole(x) {
+    const margin = 50;
+    const minTop = margin;
+    const maxTop = GROUND_Y - gap - margin;
+    const top = minTop + Math.random()*(maxTop - minTop);
+    poles.push({ x, top, gap, passed: false });
+  }
+
+  function flap() {
+    if (!running) return;
+    if (!started) started = true;
+    kite.vy = FLAP;
+  }
+
+  function circleRect(cx, cy, r, rx, ry, rw, rh) {
+    const nx = Math.max(rx, Math.min(cx, rx+rw));
+    const ny = Math.max(ry, Math.min(cy, ry+rh));
+    const dx = cx-nx, dy = cy-ny;
+    return dx*dx + dy*dy < r*r;
+  }
+
+  function update(dt) {
+    groundOffset = (groundOffset + speed*dt) % 24;
+
+    clouds.forEach(c => {
+      c.x -= c.v*dt;
+      if (c.x < -70) { c.x = W + 40; c.y = 30 + Math.random()*(GROUND_Y-160); }
     });
-    b._box = box; b._d = d;
-    dayHost.appendChild(b);
-  });
 
-  function pad(n){ return (n<10?"0":"")+n; }
-  function today(){ var n=new Date(); return pad(n.getDate())+"."+pad(n.getMonth()+1)+"."+n.getFullYear(); }
-  function isoToday(){ var n=new Date(); return n.getFullYear()+"-"+pad(n.getMonth()+1)+"-"+pad(n.getDate()); }
-  var dateInput = document.getElementById("date");
-  dateInput.value = today();
-
-  // Preselect today's weekday (Mo–Fr). On Sa/So nothing is preselected.
-  function autoDay(){
-    var g = new Date().getDay();
-    if (g >= 1 && g <= 5) {
-      var b = dayHost.children[g - 1];
-      if (b && !dayState[b._d]) b.click();
-    }
-  }
-  autoDay();
-
-  // ---- Remember the form between visits (stored in this browser only) ----
-  var KEY = "bestellliste_v1";
-  function fields(){
-    return Array.prototype.slice.call(document.querySelectorAll("#sheet input[type=text]")).filter(function(i){ return i.id !== "date"; });
-  }
-  function setDay(d, on){
-    Array.prototype.forEach.call(dayHost.children, function(b){ if (b._d === d && !!dayState[d] !== on) b.click(); });
-  }
-  function persist(){
-    try {
-      localStorage.setItem(KEY, JSON.stringify({
-        items: fields().map(function(i){ return i.value; }),
-        date: dateInput.value, days: dayState, savedOn: isoToday()
-      }));
-    } catch(e){}
-  }
-  function restore(){
-    try {
-      var raw = localStorage.getItem(KEY);
-      if (!raw) return;
-      var s = JSON.parse(raw), f = fields();
-      (s.items || []).forEach(function(v, i){ if (f[i]) f[i].value = v || ""; });
-      // Date and weekday stay "today" on a new day; the entered amounts are kept until you clear the form.
-      if (s.savedOn === isoToday()) {
-        if (s.date) dateInput.value = s.date;
-        DAYS.forEach(function(d){ setDay(d, !!(s.days && s.days[d])); });
-      }
-    } catch(e){}
-  }
-  restore();
-  document.getElementById("sheet").addEventListener("input", persist);
-  dayHost.addEventListener("click", function(){ setTimeout(persist, 0); });
-
-  var resetBtn = document.getElementById("reset"), resetTimer = null;
-  resetBtn.addEventListener("click", function(){
-    if (!resetTimer) {
-      resetBtn.textContent = "Wirklich leeren?";
-      resetTimer = setTimeout(function(){ resetTimer = null; resetBtn.textContent = "Formular leeren"; }, 3500);
+    if (!started) {
+      // gentle hover before the first tap
+      kite.y = H/2 - 20 + Math.sin(performance.now()/300)*6;
+      kite.angle = 0;
+      updateTail(dt);
       return;
     }
-    clearTimeout(resetTimer); resetTimer = null; resetBtn.textContent = "Formular leeren";
-    fields().forEach(function(i){ i.value = ""; });
-    dateInput.value = today();
-    Array.prototype.forEach.call(dayHost.children, function(b){ dayState[b._d]=false; b._box.textContent=""; b.setAttribute("aria-pressed","false"); });
-    autoDay();
-    persist();
-    setStatus("");
+
+    kite.vy = Math.min(MAX_FALL, kite.vy + GRAVITY*dt);
+    kite.y += kite.vy*dt;
+    kite.angle = Math.max(-0.5, Math.min(0.9, kite.vy*0.09));
+
+    speed = Math.min(3.4, 2.1 + score*0.04);
+    gap = Math.max(112, 150 - score*1.2);
+
+    poles.forEach(p => { p.x -= speed*dt; });
+    const last = poles[poles.length-1];
+    if (last.x < W + 20) addPole(last.x + POLE_SPACING);
+    if (poles[0].x + POLE_W < -10) poles.shift();
+
+    poles.forEach(p => {
+      if (!p.passed && p.x + POLE_W < KITE_X - KITE_R) {
+        p.passed = true;
+        score++;
+        scoreEl.textContent = score;
+      }
+    });
+
+    updateTail(dt);
+
+    // collisions
+    if (kite.y + KITE_R >= GROUND_Y || kite.y - KITE_R <= 0) { gameOver(); return; }
+    for (const p of poles) {
+      if (p.x > KITE_X + KITE_R + 4 || p.x + POLE_W < KITE_X - KITE_R - 4) continue;
+      if (circleRect(KITE_X, kite.y, KITE_R, p.x, 0, POLE_W, p.top) ||
+          circleRect(KITE_X, kite.y, KITE_R, p.x, p.top + p.gap, POLE_W, GROUND_Y - (p.top + p.gap))) {
+        gameOver();
+        return;
+      }
+    }
+  }
+
+  function updateTail(dt) {
+    let px = KITE_X - 8, py = kite.y + 12;
+    const wave = performance.now()/140;
+    for (let i = 0; i < tail.length; i++) {
+      const tx = px - 9;
+      const ty = py + 4 + Math.sin(wave + i*0.9)*3;
+      tail[i].x += (tx - tail[i].x) * Math.min(1, 0.35*dt);
+      tail[i].y += (ty - tail[i].y) * Math.min(1, 0.35*dt);
+      px = tail[i].x; py = tail[i].y;
+    }
+  }
+
+  function drawCloud(c) {
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    const r = 14*c.s;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r, 0, Math.PI*2);
+    ctx.arc(c.x + r*1.1, c.y - r*0.4, r*1.2, 0, Math.PI*2);
+    ctx.arc(c.x + r*2.3, c.y, r, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawPole(x, y, w, h, capAtBottom) {
+    if (h <= 0) return;
+    ctx.fillStyle = '#92400e';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(x + 6, y, 8, h);
+    // cap
+    const capH = 18;
+    const capY = capAtBottom ? y + h - capH : y;
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(x - 4, capY, w + 8, capH);
+    ctx.fillStyle = '#a16207';
+    ctx.fillRect(x - 4, capY, w + 8, 4);
+  }
+
+  function drawKite() {
+    // string/tail
+    ctx.strokeStyle = 'rgba(30,41,59,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(KITE_X - 4, kite.y + 10);
+    tail.forEach(t => ctx.lineTo(t.x, t.y));
+    ctx.stroke();
+    // bows
+    for (let i = 1; i < tail.length; i += 2) {
+      ctx.fillStyle = i % 4 === 1 ? '#ef4444' : '#facc15';
+      ctx.fillRect(tail[i].x - 3, tail[i].y - 3, 6, 6);
+    }
+
+    ctx.save();
+    ctx.translate(KITE_X, kite.y);
+    ctx.rotate(kite.angle);
+    // diamond body
+    ctx.beginPath();
+    ctx.moveTo(0, -17);
+    ctx.lineTo(13, -2);
+    ctx.lineTo(0, 17);
+    ctx.lineTo(-13, -2);
+    ctx.closePath();
+    ctx.fillStyle = '#f97316';
+    ctx.fill();
+    // two-tone panels
+    ctx.beginPath();
+    ctx.moveTo(0, -17);
+    ctx.lineTo(13, -2);
+    ctx.lineTo(0, -2);
+    ctx.closePath();
+    ctx.fillStyle = '#fb923c';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, 17);
+    ctx.lineTo(-13, -2);
+    ctx.lineTo(0, -2);
+    ctx.closePath();
+    ctx.fillStyle = '#c2410c';
+    ctx.fill();
+    // cross sticks
+    ctx.strokeStyle = '#7c2d12';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, -17); ctx.lineTo(0, 17);
+    ctx.moveTo(-13, -2); ctx.lineTo(13, -2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw() {
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, GROUND_Y);
+
+    clouds.forEach(drawCloud);
+
+    poles.forEach(p => {
+      drawPole(p.x, 0, POLE_W, p.top, true);
+      drawPole(p.x, p.top + p.gap, POLE_W, GROUND_Y - (p.top + p.gap), false);
+    });
+
+    // ground
+    ctx.fillStyle = '#65a30d';
+    ctx.fillRect(0, GROUND_Y, W, GROUND_H);
+    ctx.fillStyle = '#4d7c0f';
+    ctx.fillRect(0, GROUND_Y, W, 6);
+    ctx.fillStyle = '#84cc16';
+    for (let x = -24 + (-groundOffset); x < W; x += 24) {
+      ctx.fillRect(x, GROUND_Y + 18, 12, 4);
+    }
+
+    drawKite();
+
+    if (!started && running) {
+      ctx.fillStyle = 'rgba(15,23,42,0.75)';
+      ctx.font = 'bold 15px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Tap to lift!', W/2, H/2 + 60);
+    }
+
+    if (started) {
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = 'rgba(15,23,42,0.6)';
+      ctx.lineWidth = 4;
+      ctx.font = 'bold 34px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.strokeText(score, W/2, 56);
+      ctx.fillText(score, W/2, 56);
+    }
+  }
+
+  let raf = 0;
+  function loop(now) {
+    if (!running) return;
+    const dt = Math.min(2.5, (now - lastTime) / 16.667);
+    lastTime = now;
+    update(dt);
+    if (running) {
+      draw();
+      raf = requestAnimationFrame(loop);
+    }
+  }
+
+  function gameOver() {
+    running = false;
+    if (score > best) {
+      best = score;
+      bestEl.textContent = best;
+      safeSet('kite_best', best);
+    }
+    draw();
+    overlayTitle.textContent = 'KITE DOWN!';
+    overlayMsg.textContent = `You passed ${score} pole${score === 1 ? '' : 's'}. Best: ${best}`;
+    startBtn.textContent = 'Fly Again';
+    // short delay so a frantic last tap doesn't instantly dismiss the screen
+    setTimeout(() => overlay.classList.remove('hidden'), 350);
+  }
+
+  function startGame() {
+    reset();
+    overlay.classList.add('hidden');
+    cancelAnimationFrame(raf);
+    lastTime = performance.now();
+    raf = requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', startGame);
+
+  canvas.addEventListener('pointerdown', e => { e.preventDefault(); flap(); });
+  window.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') {
+      e.preventDefault();
+      if (overlay.classList.contains('hidden')) flap();
+    }
   });
 
-  var statusEl = document.getElementById("status");
-  function setStatus(t){ statusEl.textContent = t; }
-
-  var downloads = null;
-  var dlReady = false;
-  // Outside Claude (e.g. GitHub Pages) there is no downloads capability, so fall back to a normal browser download.
-  var fallbackDownloads = {
-    save: function(o){
-      var a = document.createElement("a");
-      var u = URL.createObjectURL(o.data);
-      a.href = u; a.download = o.filename; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function(){ URL.revokeObjectURL(u); }, 4000);
-      return Promise.resolve({ status: "saved" });
-    }
-  };
-  try {
-    if (window.claude && window.claude.use) {
-      window.claude.use("downloads").then(function(d){ downloads = d; dlReady = true; refreshButtons(); }, function(){ downloads = fallbackDownloads; dlReady = true; refreshButtons(); });
-    } else { downloads = fallbackDownloads; dlReady = true; }
-  } catch(e){ downloads = fallbackDownloads; dlReady = true; }
-
-  function refreshButtons(){
-    if (dlReady && !downloads) {
-      setStatus("Speichern ist in dieser Ansicht nicht verfügbar. Öffne die Seite direkt in Claude.");
-    }
-  }
-
-  // ---- Export without any library ----
-  // The sheet is drawn on a canvas (A4 proportions). JPG is saved directly from that canvas;
-  // PDF is a minimal one-page PDF file that contains the same picture.
-  var FONT = '"Helvetica Neue",Helvetica,Arial,sans-serif';
-
-  function rowOf(r){
-    return {
-      label: r.querySelector(".lbl").textContent,
-      value: r.querySelector("input").value,
-      full: r.classList.contains("full"),
-      sub: r.classList.contains("sub")
-    };
-  }
-
-  function readModel(){
-    var cols = [];
-    document.querySelectorAll("#cols > .col").forEach(function(col){
-      var blocks = [];
-      Array.prototype.forEach.call(col.children, function(node){
-        if (node.tagName === "SECTION") {
-          var sec = { title: node.querySelector("h2").textContent, rows: [] };
-          node.querySelectorAll(".row").forEach(function(r){ sec.rows.push(rowOf(r)); });
-          blocks.push(sec);
-        } else if (node.classList.contains("row")) {
-          var last = blocks[blocks.length - 1];
-          if (!last || last.title !== null) { last = { title: null, rows: [] }; blocks.push(last); }
-          last.rows.push(rowOf(node));
-        }
-      });
-      cols.push(blocks);
-    });
-    return cols;
-  }
-
-  function roundRect(ctx, x, y, w, h, r){
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  function fitText(ctx, text, maxW, size, weight){
-    var s = size;
-    ctx.font = (weight || "normal") + " " + s + "px " + FONT;
-    while (ctx.measureText(text).width > maxW && s > 7) {
-      s -= 0.5;
-      ctx.font = (weight || "normal") + " " + s + "px " + FONT;
-    }
-    while (text.length > 1 && ctx.measureText(text).width > maxW) text = text.slice(0, -1);
-    return text;
-  }
-
-  // Walks through one column. With ctx = null it only measures; otherwise it draws. Returns the bottom y.
-  function layoutColumn(ctx, blocks, x, y, colW, rh){
-    var k = rh / 24, fs = 12.5 * k, labelW = 11.5 * fs, hh = rh * 0.9;
-    blocks.forEach(function(b){
-      if (b.title !== null) {
-        if (ctx) {
-          ctx.fillStyle = "#2f5d50";
-          roundRect(ctx, x, y, colW, hh, 3); ctx.fill();
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "bold " + (12 * k) + "px " + FONT;
-          ctx.textBaseline = "middle";
-          if ("letterSpacing" in ctx) ctx.letterSpacing = "0.6px";
-          ctx.fillText(b.title.toUpperCase(), x + 7, y + hh / 2 + 0.5);
-          if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
-        }
-        y += hh + 4 * k;
-      }
-      b.rows.forEach(function(r){
-        var h = r.full ? rh * 1.6 : rh;
-        if (ctx) {
-          var lineY = y + h - 3 * k;
-          ctx.textBaseline = "alphabetic";
-          ctx.fillStyle = r.sub ? "#55524b" : "#1d1d1b";
-          ctx.font = fs + "px " + FONT;
-          var vx, vw;
-          if (r.full) {
-            ctx.fillText(r.label, x, y + fs + 1);
-            vx = x; vw = colW;
-          } else {
-            ctx.fillText(r.label, x + (r.sub ? 12 * k : 0), lineY - 4 * k);
-            vx = x + labelW + 6 * k; vw = colW - labelW - 6 * k;
-          }
-          ctx.fillStyle = "#8a867c";
-          ctx.fillRect(vx, lineY, vw, 1);
-          if (r.value) {
-            ctx.fillStyle = "#1d1d1b";
-            var t = fitText(ctx, r.value, vw - 4, fs, "normal");
-            ctx.fillText(t, vx + 2, lineY - 3 * k);
-          }
-        }
-        y += h;
-      });
-      y += 12 * k;
-    });
-    return y;
-  }
-
-  function drawSheet(){
-    var W = 794, H = 1123, S = 2, PADX = 36, GAP = 22, BOT = 26;
-    var canvas = document.createElement("canvas");
-    canvas.width = W * S; canvas.height = H * S;
-    var ctx = canvas.getContext("2d");
-    ctx.scale(S, S);
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
-
-    // Title
-    ctx.fillStyle = "#1d1d1b"; ctx.textBaseline = "alphabetic";
-    ctx.font = "bold 26px " + FONT;
-    ctx.fillText("Bestandsliste", PADX, 60);
-
-    // Date and weekday
-    var my = 88;
-    ctx.textBaseline = "middle";
-    ctx.font = "bold 14px " + FONT;
-    ctx.fillText("Datum:", PADX, my);
-    var dx = PADX + ctx.measureText("Datum:").width + 8;
-    ctx.fillStyle = "#8a867c"; ctx.fillRect(dx, my + 10, 120, 1);
-    ctx.fillStyle = "#1d1d1b";
-    ctx.font = "14px " + FONT;
-    ctx.fillText(fitText(ctx, dateInput.value, 116, 14, "normal"), dx + 2, my);
-    var tx = dx + 120 + 22;
-    ctx.font = "bold 14px " + FONT;
-    ctx.fillText("Tag:", tx, my);
-    var bx = tx + ctx.measureText("Tag:").width + 14;
-    DAYS.forEach(function(d){
-      ctx.strokeStyle = "#1d1d1b"; ctx.lineWidth = 1.5;
-      roundRect(ctx, bx + 0.75, my - 7.25, 14.5, 14.5, 3); ctx.stroke();
-      if (dayState[d]) {
-        ctx.font = "bold 13px " + FONT; ctx.textAlign = "center";
-        ctx.fillText("\u2713", bx + 8, my + 0.5); ctx.textAlign = "left";
-      }
-      ctx.font = "14px " + FONT;
-      ctx.fillText(d, bx + 21, my);
-      bx += 21 + ctx.measureText(d).width + 14;
-    });
-    ctx.fillStyle = "#1d1d1b"; ctx.fillRect(PADX, 110, W - 2 * PADX, 2);
-
-    // Three columns; row height shrinks if needed so everything stays on this one page
-    var cols = readModel();
-    var colW = (W - 2 * PADX - 2 * GAP) / 3;
-    var top = 126, avail = H - BOT - top, rh = 24;
-    while (rh > 14) {
-      var tallest = 0;
-      cols.forEach(function(c){ tallest = Math.max(tallest, layoutColumn(null, c, 0, 0, colW, rh)); });
-      if (tallest <= avail) break;
-      rh -= 0.5;
-    }
-    cols.forEach(function(c, i){ layoutColumn(ctx, c, PADX + i * (colW + GAP), top, colW, rh); });
-    return canvas;
-  }
-
-  // Minimal one-page A4 PDF that shows the JPEG picture full page.
-  function makePdf(jpeg, imgW, imgH){
-    var chunks = [], offsets = [], pos = 0;
-    function bytes(s){ var a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i) & 255; return a; }
-    function push(x){ var b = typeof x === "string" ? bytes(x) : x; chunks.push(b); pos += b.length; }
-    function obj(n, body){ offsets[n] = pos; push(n + " 0 obj\n" + body + "\nendobj\n"); }
-    function pad10(n){ var s = String(n); while (s.length < 10) s = "0" + s; return s; }
-    var PW = 595.28, PH = 841.89;
-    push("%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n");
-    obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
-    obj(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
-    obj(3, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + PW + " " + PH + "] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>");
-    offsets[4] = pos;
-    push("4 0 obj\n<< /Type /XObject /Subtype /Image /Width " + imgW + " /Height " + imgH +
-         " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + jpeg.length + " >>\nstream\n");
-    push(jpeg);
-    push("\nendstream\nendobj\n");
-    var content = "q " + PW + " 0 0 " + PH + " 0 0 cm /Im0 Do Q";
-    obj(5, "<< /Length " + content.length + " >>\nstream\n" + content + "\nendstream");
-    var xrefPos = pos, xref = "xref\n0 6\n0000000000 65535 f \n";
-    for (var n = 1; n <= 5; n++) xref += pad10(offsets[n]) + " 00000 n \n";
-    push(xref + "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xrefPos + "\n%%EOF\n");
-    return new Blob(chunks, { type: "application/pdf" });
-  }
-
-  function fileStem(){ return "Bestandsliste_" + isoToday(); }
-
-  function canvasToBlob(canvas, type, q){
-    return new Promise(function(res, rej){ canvas.toBlob(function(b){ b ? res(b) : rej(new Error("blob")); }, type, q); });
-  }
-
-  function busy(on){
-    ["jpg","pdf","reset"].forEach(function(id){ document.getElementById(id).disabled = on; });
-  }
-
-  async function save(kind){
-    if (!downloads) { setStatus("Speichern ist hier nicht verfügbar."); return; }
-    busy(true); setStatus("Wird erstellt …");
-    try {
-      var canvas = drawSheet();
-      var jpegBlob = await canvasToBlob(canvas, "image/jpeg", 0.95);
-      var data, name;
-      if (kind === "jpg") {
-        data = jpegBlob;
-        name = fileStem() + ".jpg";
-      } else {
-        var bytes = new Uint8Array(await jpegBlob.arrayBuffer());
-        data = makePdf(bytes, canvas.width, canvas.height);
-        name = fileStem() + ".pdf";
-      }
-      var r = await downloads.save({ filename: name, data: data });
-      setStatus(r && r.status === "saved" ? "Gespeichert: " + name : "Fertig.");
-    } catch (err) {
-      if (err && err.code === "declined") setStatus("Abgebrochen.");
-      else setStatus("Das hat nicht geklappt" + (err && err.message ? " (" + err.message + ")" : "") + ".");
-    } finally { busy(false); }
-  }
-
-  document.getElementById("jpg").addEventListener("click", function(){ save("jpg"); });
-  document.getElementById("pdf").addEventListener("click", function(){ save("pdf"); });
+  reset();
+  draw();
 })();
 </script>
 </body>
