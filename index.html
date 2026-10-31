@@ -145,7 +145,8 @@
 (function() {
   const canvas = document.getElementById('board');
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  let W = canvas.width;   // logical width: widens in fullscreen to match the screen shape
+  const H = canvas.height;
 
   const scoreEl = document.getElementById('score');
   const bestEl = document.getElementById('best');
@@ -198,9 +199,7 @@
     running = true;
     deadTimer = 0;
     scoreEl.textContent = 0;
-    addPole(W + 60);
-    addPole(W + 60 + POLE_SPACING);
-    addPole(W + 60 + POLE_SPACING*2);
+    fillPoles();
   }
 
   function addPole(x) {
@@ -209,6 +208,13 @@
     const maxTop = GROUND_Y - gap - margin;
     const top = minTop + Math.random()*(maxTop - minTop);
     poles.push({ x, top, gap, passed: false });
+  }
+
+  // Keep poles queued up to just past the right edge (also covers a screen that gets wider)
+  function fillPoles() {
+    while (poles.length === 0 || poles[poles.length-1].x < W + 20) {
+      addPole(poles.length ? poles[poles.length-1].x + POLE_SPACING : W + 60);
+    }
   }
 
   function flap() {
@@ -248,8 +254,7 @@
     gap = Math.max(112, 150 - score*1.2);
 
     poles.forEach(p => { p.x -= speed*dt; });
-    const last = poles[poles.length-1];
-    if (last.x < W + 20) addPole(last.x + POLE_SPACING);
+    fillPoles();
     if (poles[0].x + POLE_W < -10) poles.shift();
 
     poles.forEach(p => {
@@ -458,16 +463,33 @@
   function isFs() {
     return nativeFsActive() || wrap.classList.contains('pseudo-fs');
   }
-  // Scale the canvas up to fit the screen while keeping its aspect ratio
+  // In fullscreen the game fills the ENTIRE screen: the play area keeps its
+  // height but gets wider/narrower to match the screen's shape (no black bars,
+  // no stretching). The canvas is also rendered at up to 2x for a sharper image.
+  const BASE_W = 320;
   function fitCanvas() {
-    if (!isFs()) {
+    let newW, scale;
+    if (isFs()) {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      newW = Math.max(220, Math.min(1000, (H * vw) / vh));
+      scale = Math.min(2, Math.max(1, vh / H));
+      canvas.style.width = vw + 'px';
+      canvas.style.height = vh + 'px';
+    } else {
+      newW = BASE_W;
+      scale = 1;
       canvas.style.width = '';
       canvas.style.height = '';
-      return;
     }
-    const s = Math.min(window.innerWidth / W, window.innerHeight / H);
-    canvas.style.width = Math.floor(W * s) + 'px';
-    canvas.style.height = Math.floor(H * s) + 'px';
+    const pxW = Math.round(newW * scale), pxH = Math.round(H * scale);
+    if (canvas.width !== pxW || canvas.height !== pxH) {
+      canvas.width = pxW;
+      canvas.height = pxH;
+    }
+    ctx.setTransform(pxW / newW, 0, 0, pxH / H, 0, 0);
+    W = newW;
+    if (poles && poles.length) fillPoles();
+    draw();
   }
   function syncFsState() {
     wrap.classList.toggle('is-fs', isFs());
